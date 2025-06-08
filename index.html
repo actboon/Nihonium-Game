@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nh113: The Bismuth Strike</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body style="background:linear-gradient(135deg,#181a23 0%,#23243a 100%);min-height:100vh;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+  <div id="game-container" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;">
+    <div id="neon-title" style="font-family:'Orbitron', 'Arial', sans-serif;font-size:2.5rem;font-weight:900;letter-spacing:0.08em;color:#39f3ff;text-shadow:0 0 12px #39f3ff,0 0 24px #39f3ff,0 0 40px #3f8cff; margin-bottom:22px;">Nh113: The Bismuth Strike</div>
+    <div id="canvas-neon-wrap" style="box-shadow:0 0 24px 8px #39f3ff,0 0 80px 16px #3f8cff,0 0 0 6px #222 inset;border-radius:22px;padding:18px;background:rgba(20,30,40,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:340px;min-height:640px;">
+      <!-- p5.js canvas will be injected here -->
+      <div id="ranking-embedded" style="display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;margin-top:18px;">
+        <div style="font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:900;letter-spacing:0.05em;color:#2ffaff;text-shadow:0 0 8px #2ffaff,0 0 20px #0ff;margin-bottom:10px;">RANKING</div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px;width:100%;max-width:340px;">
+          <!-- contenteditable divを使ったカスタム入力フィールド -->
+          <div id="username-input" contenteditable="true" data-placeholder="ユーザ名" data-maxlength="12" style="flex:1 1 0%;font-size:1.07rem;padding:10px 14px;border-radius:8px;border:1.5px solid #2ffaff;outline:none;transition:border .2s;box-shadow:0 0 8px #2ffaff88;background:#181a23;color:#fff;min-height:1.4em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"></div>
+          <button id="submit-btn" style="font-size:1.07rem;padding:10px 22px;background:linear-gradient(90deg,#2ffaff,#3f8cff);color:#181a23;border:none;border-radius:8px;font-weight:bold;box-shadow:0 2px 8px #2ffaff55;cursor:pointer;transition:background .2s;text-shadow:0 0 6px #fff;">送信</button>
+        </div>
+        <div id="ranking-error" style="color:#e63946;font-size:14px;text-align:center;margin-bottom:10px;"></div>
+        <div id="ranking-list" style="font-size:1.13rem;line-height:1.7;text-align:left;min-height:40px;width:100%;max-width:340px;"></div>
+      </div>
+    </div>
+    
+    <!-- ゲームオーバー時に表示するランキング専用画面 -->
+    <div id="ranking-fullscreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#181a23 0%,#23243a 100%);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:1000;">
+      <div style="font-family:'Orbitron', 'Arial', sans-serif;font-size:2.5rem;font-weight:900;letter-spacing:0.08em;color:#39f3ff;text-shadow:0 0 12px #39f3ff,0 0 24px #39f3ff,0 0 40px #3f8cff;margin-bottom:10px;">GAME OVER</div>
+      <div id="final-score" style="font-family:'Orbitron',sans-serif;font-size:1.8rem;font-weight:700;color:#fff;margin-bottom:30px;">Score: 0</div>
+      
+      <div style="box-shadow:0 0 24px 8px #39f3ff,0 0 80px 16px #3f8cff,0 0 0 6px #222 inset;border-radius:22px;padding:30px;background:rgba(20,30,40,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:340px;max-width:500px;width:80%;">
+        <div style="font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:900;letter-spacing:0.05em;color:#2ffaff;text-shadow:0 0 8px #2ffaff,0 0 20px #0ff;margin-bottom:20px;">RANKING</div>
+        
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px;width:100%;max-width:400px;">
+          <!-- 入力フィールド（標準のinputを使用） -->
+          <input id="username-input-fullscreen" type="text" placeholder="ユーザ名" maxlength="12" style="flex:1 1 0%;font-size:1.07rem;padding:10px 14px;border-radius:8px;border:1.5px solid #2ffaff;outline:none;transition:border .2s;box-shadow:0 0 8px #2ffaff88;background:#181a23;color:#fff;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <button id="submit-btn-fullscreen" style="font-size:1.07rem;padding:10px 22px;background:linear-gradient(90deg,#2ffaff,#3f8cff);color:#181a23;border:none;border-radius:8px;font-weight:bold;box-shadow:0 2px 8px #2ffaff55;cursor:pointer;transition:background .2s;text-shadow:0 0 6px #fff;">送信</button>
+        </div>
+        
+        <div id="ranking-error-fullscreen" style="color:#e63946;font-size:14px;text-align:center;margin-bottom:10px;"></div>
+        <div id="ranking-list-fullscreen" style="font-size:1.13rem;line-height:1.7;text-align:left;min-height:40px;width:100%;max-width:400px;"></div>
+      </div>
+      
+      <div style="margin-top:30px;">
+        <button id="restart-btn" style="font-size:1.2rem;padding:12px 30px;background:linear-gradient(90deg,#ff5e5e,#ff8f3f);color:#181a23;border:none;border-radius:8px;font-weight:bold;box-shadow:0 2px 8px rgba(255,94,94,0.5);cursor:pointer;transition:background .2s;text-shadow:0 0 6px #fff;">リスタート</button>
+      </div>
+    </div>
+  </div>
+  <script src="sketch.js"></script>
+  <script src="supabaseClient.js"></script>
+  <script src="inputHandler.js"></script>
+  <script src="fullscreenRanking.js"></script>
+  <script>
+    // p5.jsのcanvasをneon枠内に移動＆中央化
+    let p5CanvasAppended = false;
+    function moveCanvasToNeonWrap() {
+      const wrap = document.getElementById('canvas-neon-wrap');
+      if (window.canvas && wrap && !p5CanvasAppended) {
+        wrap.appendChild(window.canvas.elt);
+        p5CanvasAppended = true;
+      }
+    }
+    // p5.jsのsetup後にcanvasを移動
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(moveCanvasToNeonWrap, 500);
+      setTimeout(moveCanvasToNeonWrap, 1200);
+    });
+    window.addEventListener('resize', moveCanvasToNeonWrap);
+
+    // Google Fonts for futuristic font
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+
+    // Embedded Ranking UI handlers
+    const rankingEmbedded = document.getElementById('ranking-embedded');
+    const submitBtn = document.getElementById('submit-btn');
+    const usernameInput = document.getElementById('username-input');
+    const rankingList = document.getElementById('ranking-list');
+    const rankingError = document.getElementById('ranking-error');
+    let lastScore = 0;
+
+    // モーダル閉じる（inputのフォーカス外す＋ゲームにフォーカス戻す）
+    closeBtn.onclick = () => {
+      rankingUI.style.display = 'none';
+      setTimeout(() => {
+        usernameInput.blur();
+        window.focus();
+        if (typeof canvas !== 'undefined' && canvas) canvas.focus();
+      }, 30);
+    };
+    // 入力フィールド処理はinputHandler.jsに移動
+
+    // ランキング取得＆表示
+    async function fetchAndShowRanking() {
+      rankingList.innerHTML = '<span style="color:#888">読み込み中...</span>';
+      const { data, error } = await fetchRanking();
+      if (error) {
+        rankingList.innerHTML = '<span style="color:#e63946">取得失敗: ' + error.message + '</span>';
+        return;
+      }
+      if (!data || data.length === 0) {
+        rankingList.innerHTML = '<span style="color:#888">まだスコアがありません</span>';
+        return;
+      }
+      rankingList.innerHTML = '<ol style="padding-left:1.7em;margin:0;font-size:1.12em;">' +
+        data.map((r,i) => `<li style="margin-bottom:2px;${i===0?'color:#2b3a55;font-weight:bold;':''}"><span style="display:inline-block;min-width:4em;">${r.username}</span> <span style="color:#5c7cff;font-weight:bold;">${r.score}点</span></li>`).join('') + '</ol>';
+    }
+    // ゲーム終了時にwindow.lastScoreへ保存する仕組みはsketch.js側で対応
+    // どこにフォーカスがあってもEnterでゲーム開始（タイトル/ゲームオーバー時）
+    document.addEventListener('keydown', (e) => {
+      const rankingUI = document.getElementById('ranking-ui');
+      const usernameInput = document.getElementById('username-input');
+      if ((window.gameState === 0 || window.gameState === 2) &&
+          !(rankingUI && rankingUI.style.display === 'block' && document.activeElement === usernameInput)) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+          if (typeof startGame === 'function') startGame();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
