@@ -501,6 +501,7 @@ function draw() {
         finalScoreElement.textContent = 'Score: ' + score;
       }
       rankingFullscreen.style.display = 'flex';
+      // p5.jsのインスタンスを完全に破棄し、イベントハンドラを無効化
       if (canvas) {
         canvas.style.display = 'none';
         canvas.style.pointerEvents = 'none';
@@ -508,7 +509,22 @@ function draw() {
           canvas.parentNode.removeChild(canvas);
         }
       }
-      window.canvas = null; // グローバル参照も消す
+      
+      // p5.jsのインスタンスを破棄
+      window.canvas = null;
+      
+      // タッチイベントを完全に無効化
+      window.touchStarted = null;
+      window.touchMoved = null;
+      window.touchEnded = null;
+      window.mousePressed = null;
+      window.mouseReleased = null;
+      
+      // ランキング画面のタッチイベントを強化
+      document.getElementById('ranking-fullscreen').style.pointerEvents = 'auto';
+      document.getElementById('username-input-fullscreen').style.pointerEvents = 'auto';
+      document.getElementById('submit-btn-fullscreen').style.pointerEvents = 'auto';
+      document.getElementById('restart-btn').style.pointerEvents = 'auto';
       setTimeout(() => {
         const usernameInput = document.getElementById('username-input-fullscreen');
         if (usernameInput) {
@@ -631,11 +647,15 @@ function startGame() {
     rankingFullscreen.style.display = 'none';
   }
   const canvas = document.getElementById('defaultCanvas0');
+  // 新しいp5.jsインスタンスを作成
   if (!window.canvas) {
     window.canvas = createCanvas(600, 600);
     window.canvas.elt.id = "defaultCanvas0";
     window.canvas.style('display', 'block');
     window.canvas.style('pointer-events', 'auto');
+    
+    // タッチイベントを再設定
+    initTouchButtons();
   } else {
     canvas.style.display = 'block';
     canvas.style.pointerEvents = 'auto';

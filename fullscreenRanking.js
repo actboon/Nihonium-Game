@@ -5,6 +5,26 @@ document.addEventListener('DOMContentLoaded', function() {
   const submitBtn = document.getElementById('submit-btn-fullscreen');
   const rankingError = document.getElementById('ranking-error-fullscreen');
   const restartBtn = document.getElementById('restart-btn');
+  const rankingFullscreen = document.getElementById('ranking-fullscreen');
+  
+  // タブレット用：p5.jsのイベント伝播を確実に遮断
+  if (rankingFullscreen) {
+    // ランキング画面が表示されたときにp5.jsのイベントを無効化
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.attributeName === 'style' && 
+            rankingFullscreen.style.display === 'flex') {
+          // p5.jsのイベントハンドラを無効化
+          disableP5Events();
+          
+          // タッチイベントを強制的に有効化
+          enableTouchForRanking();
+        }
+      });
+    });
+    
+    observer.observe(rankingFullscreen, { attributes: true });
+  }
   
   if (usernameInput && submitBtn) {
     // フォーカス時の処理
@@ -58,12 +78,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // リスタートボタンのクリック処理
     if (restartBtn) {
-      restartBtn.addEventListener('click', function() {
-        // ランキング画面を非表示にする
-        const rankingFullscreen = document.getElementById('ranking-fullscreen');
-        if (rankingFullscreen) {
-          rankingFullscreen.style.display = 'none';
-        }
+      // クリックイベントとタッチイベントの両方を追加
+      ['click', 'touchend'].forEach(eventType => {
+        restartBtn.addEventListener(eventType, function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // ランキング画面を非表示にする
+          const rankingFullscreen = document.getElementById('ranking-fullscreen');
+          if (rankingFullscreen) {
+            rankingFullscreen.style.display = 'none';
+          }
         
         // ゲームをリスタート
         if (typeof startGame === 'function') {
@@ -72,6 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
           // フォールバック: ページをリロード
           window.location.reload();
         }
+        }, { passive: false });
       });
     }
     
@@ -80,6 +106,54 @@ document.addEventListener('DOMContentLoaded', function() {
     console.error('Required fullscreen ranking elements not found');
   }
 });
+
+// p5.jsのイベントハンドラを無効化する関数
+function disableP5Events() {
+  // グローバルなp5.jsのイベントハンドラを無効化
+  if (window.p5) {
+    window.touchStarted = null;
+    window.touchMoved = null;
+    window.touchEnded = null;
+    window.mousePressed = null;
+    window.mouseReleased = null;
+  }
+  
+  // canvas要素を完全に無効化
+  const canvas = document.getElementById('defaultCanvas0');
+  if (canvas) {
+    canvas.style.display = 'none';
+    canvas.style.pointerEvents = 'none';
+    if (canvas.parentNode) {
+      canvas.parentNode.removeChild(canvas);
+    }
+  }
+}
+
+// ランキング画面のタッチイベントを強化する関数
+function enableTouchForRanking() {
+  const elements = [
+    document.getElementById('username-input-fullscreen'),
+    document.getElementById('submit-btn-fullscreen'),
+    document.getElementById('restart-btn'),
+    document.getElementById('ranking-fullscreen')
+  ];
+  
+  elements.forEach(el => {
+    if (el) {
+      el.style.pointerEvents = 'auto';
+      el.style.touchAction = 'auto';
+      
+      // タッチイベントを直接追加
+      if (el.id === 'submit-btn-fullscreen' || el.id === 'restart-btn') {
+        el.addEventListener('touchend', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.click();
+        }, { passive: false });
+      }
+    }
+  });
+}
 
 // 全画面用のランキング取得・表示関数
 function fetchAndShowRankingFullscreen() {
