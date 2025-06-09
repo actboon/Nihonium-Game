@@ -5,12 +5,13 @@ Audio is generated using p5.js oscillators, noise, and envelopes.
 Make sure to include the p5.sound library along with p5.js for sound to work.
 */
 const CANVAS_WIDTH = 600;
-const CANVAS_HEIGHT = 600; // Extended height for control buttons
+const CANVAS_HEIGHT = 600;
 
 // Touch button area
-const BUTTON_AREA_HEIGHT = 100;
+const BUTTON_AREA_HEIGHT = 80;
 let leftBtn, rightBtn, shootBtn;
-let leftPressed = false, rightPressed = false, shootPressed = false;
+let leftPressed = false, rightPressed = false, shootPressed = false; // タッチ用
+
 const BULLET_R = 5;
 const ENEMY_R = 20;
 const PLAYER_R = 20;
@@ -45,6 +46,15 @@ let powerupTimer = 0;
 
 function setup() {
   window.canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+  // タッチボタン初期化（1回だけ）
+  const margin = 20;
+  const btnW = 80, btnH = 60;
+  const baseY = height - BUTTON_AREA_HEIGHT/2;
+  leftBtn = {x: margin + btnW/2, y: baseY, w: btnW, h: btnH, label:'←'};
+  rightBtn = {x: width/2, y: baseY, w: btnW, h: btnH, label:'→'};
+  shootBtn = {x: width - margin - btnW/2, y: baseY, w: btnW, h: btnH, label:'SHOOT'};
+
+
   // Initialize starfield
   for (let i = 0; i < 100; i++) {
     stars.push({
@@ -74,6 +84,46 @@ function setup() {
   spawnTimer = spawnInterval;
   gameState = 0;
 }
+
+function mousePressed() {
+  // PC用: クリックでボタン反応
+  leftPressed = rightPressed = shootPressed = false;
+  if (inBtn({x: mouseX, y: mouseY}, leftBtn)) leftPressed = true;
+  if (inBtn({x: mouseX, y: mouseY}, rightBtn)) rightPressed = true;
+  if (inBtn({x: mouseX, y: mouseY}, shootBtn)) shootPressed = true;
+}
+function mouseReleased() {
+  leftPressed = rightPressed = shootPressed = false;
+}
+
+function touchStarted() {
+  leftPressed = rightPressed = shootPressed = false;
+  for (let t of touches) {
+    if (inBtn(t, leftBtn)) leftPressed = true;
+    if (inBtn(t, rightBtn)) rightPressed = true;
+    if (inBtn(t, shootBtn)) shootPressed = true;
+  }
+  return false; // デフォルト動作防止
+}
+function touchMoved() {
+  leftPressed = rightPressed = shootPressed = false;
+  for (let t of touches) {
+    if (inBtn(t, leftBtn)) leftPressed = true;
+    if (inBtn(t, rightBtn)) rightPressed = true;
+    if (inBtn(t, shootBtn)) shootPressed = true;
+  }
+  return false;
+}
+function touchEnded() {
+  leftPressed = rightPressed = shootPressed = false;
+  return false;
+}
+function inBtn(t, btn) {
+  return t.x > btn.x - btn.w/2 && t.x < btn.x + btn.w/2 &&
+         t.y > btn.y - btn.h/2 && t.y < btn.y + btn.h/2;
+}
+
+
 
 // 周期表風の背景を描く
 function drawPeriodicTableBackground() {
@@ -165,6 +215,43 @@ function drawPeriodicTableBackground() {
   }
 }
 
+// --- タッチボタン描画 ---
+function drawTouchButtons() {
+  push();
+  rectMode(CENTER);
+  textAlign(CENTER, CENTER);
+  textSize(24);
+  fill(20, 30, 40, 120); // 半透明背景
+  noStroke();
+  rect(width/2, height - BUTTON_AREA_HEIGHT/2, width, BUTTON_AREA_HEIGHT, 20);
+  drawButton(leftBtn, leftPressed);
+  drawButton(rightBtn, rightPressed);
+  drawButton(shootBtn, shootPressed);
+  pop();
+}
+function drawButton(btn, pressed) {
+  push();
+  rectMode(CENTER);
+  stroke(255, 200);
+  strokeWeight(pressed ? 4 : 2);
+  fill(pressed ? 'rgba(255,80,80,0.7)' : 'rgba(80,160,255,0.4)');
+  rect(btn.x, btn.y, btn.w, btn.h, 12);
+  fill(255);
+  textAlign(CENTER, CENTER);
+  if (btn.label === "SHOOT") {
+    // 上側に小さめで"SHOOT"
+    textSize(16);
+    text("SHOOT", btn.x, btn.y - 10);
+    // 下側にさらに小さく(SPACE)
+    textSize(12);
+    text("(SPACE)", btn.x, btn.y + 14);
+  } else {
+    // 通常ラベル
+    textSize(24);
+    text(btn.label, btn.x, btn.y);
+  }
+  pop();
+}
 
 function draw() {
   // 電気アイテム出現タイミング
@@ -210,6 +297,20 @@ function draw() {
     particles[i].show();
     if (particles[i].isDead()) particles.splice(i, 1);
   }
+
+  // --- SCOREと強化モード残り時間表示 ---
+  push();
+  fill(255);
+  textSize(18);
+  textAlign(LEFT, TOP);
+  text("SCORE: " + score, 10, 10);
+  if (powerupTimer > 0) {
+    let sec = Math.ceil(powerupTimer / 60);
+    textSize(14);
+    text("Power-up Time Left: " + sec + "s", 10, 36);
+  }
+  pop();
+
   if (gameState === 0) {
     // Start Screen
     textAlign(CENTER, CENTER);
@@ -223,11 +324,25 @@ function draw() {
   } else if (gameState === 1) {
     // Playing State
     // Player movement
-    if (keyIsDown(LEFT_ARROW)) {
+    // タッチ or キーボード両対応
+    if (keyIsDown(LEFT_ARROW) || leftPressed) {
       player.x = max(player.x - player.speed, PLAYER_R);
     }
-    if (keyIsDown(RIGHT_ARROW)) {
+    if (keyIsDown(RIGHT_ARROW) || rightPressed) {
       player.x = min(player.x + player.speed, width - PLAYER_R);
+    }
+    // シュート（タッチ or キーボード）
+    if ((shootPressed || keyIsDown(32)) && shootCooldown <= 0 && gameState === 1) { // 32:スペースキー
+      if (powerupTimer > 0) {
+        bullets.push(new Bullet(player.x, player.y - PLAYER_R));
+        let b1 = new Bullet(player.x, player.y - PLAYER_R); b1.angle = -0.25; bullets.push(b1);
+        let b2 = new Bullet(player.x, player.y - PLAYER_R); b2.angle = 0.25; bullets.push(b2);
+      } else {
+        bullets.push(new Bullet(player.x, player.y - PLAYER_R));
+      }
+      shootCooldown = 10;
+      if (oscShoot && envShoot) { oscShoot.start(); envShoot.play(oscShoot); }
+      shootPressed = false; // タッチは1回でリセット
     }
     // Draw player
     player.show();
@@ -356,11 +471,7 @@ function draw() {
       oscMusic.freq(freq);
       envMusic.play(oscMusic, 0, 0.2);
     }
-    // Draw score
-    fill(255);
-    textSize(16);
-    textAlign(LEFT, TOP);
-    text("Score: " + score, 10, 10);
+
     // Screen flash effect (on player death)
     if (flashAlpha > 0) {
       fill(255, 255, 255, flashAlpha);
@@ -396,6 +507,7 @@ function draw() {
     }
     noLoop();
   }
+  drawTouchButtons();
 }
 
 function keyPressed() {
@@ -493,7 +605,7 @@ function startGame() {
   flashAlpha = 0;
   // Reset player position
   player.x = width / 2;
-  player.y = height - 40;
+  player.y = height - BUTTON_AREA_HEIGHT - 40;
 
   // Hide fullscreen ranking and show canvas
   const rankingFullscreen = document.getElementById('ranking-fullscreen');
@@ -519,7 +631,7 @@ function startGame() {
 class Player {
   constructor() {
     this.x = width / 2;
-    this.y = height - 40;
+    this.y = height - BUTTON_AREA_HEIGHT - 40;
     this.speed = 5;
   }
   show() {
