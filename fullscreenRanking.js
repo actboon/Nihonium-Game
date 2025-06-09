@@ -84,19 +84,24 @@ document.addEventListener('DOMContentLoaded', function() {
           e.preventDefault();
           e.stopPropagation();
           
+          // 指定のURLに直接リダイレクト
+          window.location.href = 'https://actboon.github.io/Nihonium-Game/';
+          
+          /* 以下の元のコードは使用しない
           // ランキング画面を非表示にする
           const rankingFullscreen = document.getElementById('ranking-fullscreen');
           if (rankingFullscreen) {
             rankingFullscreen.style.display = 'none';
           }
         
-        // ゲームをリスタート
-        if (typeof startGame === 'function') {
-          startGame();
-        } else {
-          // フォールバック: ページをリロード
-          window.location.reload();
-        }
+          // ゲームをリスタート
+          if (typeof startGame === 'function') {
+            startGame();
+          } else {
+            // フォールバック: ページをリロード
+            window.location.reload();
+          }
+          */
         }, { passive: false });
       });
     }
