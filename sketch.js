@@ -331,6 +331,9 @@ function draw() {
     text("Controls: / to move, Space to shoot", width/2, height/2 - 20);
     text("Shoot Bismuth (Bi) with Zinc (Zn) bullets to create Nihonium (Nh)!", width/2, height/2 + 5);
     text("Press ENTER to Start", width/2, height/2 + 50);
+    textSize(12);
+    fill(180);
+    text("(beta)", width/2, height/2 + 70);
   } else if (gameState === 1) {
     // Playing State
     // Player movement
