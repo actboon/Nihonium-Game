@@ -503,6 +503,7 @@ function draw() {
       rankingFullscreen.style.display = 'flex';
       if (canvas) {
         canvas.style.display = 'none'; // Hide p5.js canvas
+        canvas.style.pointerEvents = 'none'; // タッチ・クリックを無効化
       }
       setTimeout(() => {
         const usernameInput = document.getElementById('username-input-fullscreen');
@@ -628,6 +629,7 @@ function startGame() {
   const canvas = document.getElementById('defaultCanvas0');
   if (canvas) {
     canvas.style.display = 'block';
+    canvas.style.pointerEvents = 'auto'; // タッチ・クリックを有効化
   }
 
   // 
