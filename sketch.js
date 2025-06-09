@@ -102,7 +102,20 @@ function mouseReleased() {
 }
 
 function touchStarted() {
-  if (gameState === 2) return; // ゲームオーバー画面ではp5.jsのタッチ処理を無効化
+  // タブレットでの音声初期化を強化
+  if (!audioStarted) {
+    userStartAudio().then(() => {
+      console.log('Audio context started successfully');
+      if (oscMusic && oscShoot && noiseExpl) {
+        oscMusic.start(); oscMusic.amp(0);
+        oscShoot.start(); oscShoot.amp(0);
+        noiseExpl.start(); noiseExpl.amp(0);
+        audioStarted = true;
+      }
+    }).catch(err => console.error('Failed to start audio:', err));
+  }
+  
+  if (gameState === 2) return false; // ゲームオーバー画面ではp5.jsのタッチ処理を無効化
   if (gameState === 0) {
     startGame();
     return false;
@@ -333,7 +346,7 @@ function draw() {
     text("Press ENTER to Start", width/2, height/2 + 50);
     textSize(12);
     fill(180);
-    text("beta3.0", width/2, height/2 + 70);
+    text("beta3.1", width/2, height/2 + 70);
   } else if (gameState === 1) {
     // Playing State
     // Player movement
@@ -614,11 +627,15 @@ function keyPressed() {
 function startGame() {
   // Initialize audio on first user interaction
   if (!audioStarted) {
-    userStartAudio();
-    oscMusic.start(); oscMusic.amp(0);
-    oscShoot.start(); oscShoot.amp(0);
-    noiseExpl.start(); noiseExpl.amp(0);
-    audioStarted = true;
+    userStartAudio().then(() => {
+      console.log('Audio context started successfully');
+      if (oscMusic && oscShoot && noiseExpl) {
+        oscMusic.start(); oscMusic.amp(0);
+        oscShoot.start(); oscShoot.amp(0);
+        noiseExpl.start(); noiseExpl.amp(0);
+        audioStarted = true;
+      }
+    }).catch(err => console.error('Failed to start audio:', err));
   } else {
     // Resume background oscillator if it was stopped
     oscMusic.start();
