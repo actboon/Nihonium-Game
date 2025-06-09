@@ -333,7 +333,7 @@ function draw() {
     text("Press ENTER to Start", width/2, height/2 + 50);
     textSize(12);
     fill(180);
-    text("(beta)", width/2, height/2 + 70);
+    text("beta2.0", width/2, height/2 + 70);
   } else if (gameState === 1) {
     // Playing State
     // Player movement
@@ -502,9 +502,13 @@ function draw() {
       }
       rankingFullscreen.style.display = 'flex';
       if (canvas) {
-        canvas.style.display = 'none'; // Hide p5.js canvas
-        canvas.style.pointerEvents = 'none'; // タッチ・クリックを無効化
+        canvas.style.display = 'none';
+        canvas.style.pointerEvents = 'none';
+        if (canvas.parentNode) {
+          canvas.parentNode.removeChild(canvas);
+        }
       }
+      window.canvas = null; // グローバル参照も消す
       setTimeout(() => {
         const usernameInput = document.getElementById('username-input-fullscreen');
         if (usernameInput) {
@@ -627,9 +631,14 @@ function startGame() {
     rankingFullscreen.style.display = 'none';
   }
   const canvas = document.getElementById('defaultCanvas0');
-  if (canvas) {
+  if (!window.canvas) {
+    window.canvas = createCanvas(600, 600);
+    window.canvas.elt.id = "defaultCanvas0";
+    window.canvas.style('display', 'block');
+    window.canvas.style('pointer-events', 'auto');
+  } else {
     canvas.style.display = 'block';
-    canvas.style.pointerEvents = 'auto'; // タッチ・クリックを有効化
+    canvas.style.pointerEvents = 'auto';
   }
 
   // 
