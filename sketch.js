@@ -86,6 +86,7 @@ function setup() {
 }
 
 function mousePressed() {
+  if (gameState === 2) return; // ゲームオーバー画面ではp5.jsのマウス処理を無効化
   if (gameState === 0) {
     startGame();
     return;
@@ -101,6 +102,7 @@ function mouseReleased() {
 }
 
 function touchStarted() {
+  if (gameState === 2) return; // ゲームオーバー画面ではp5.jsのタッチ処理を無効化
   if (gameState === 0) {
     startGame();
     return false;
