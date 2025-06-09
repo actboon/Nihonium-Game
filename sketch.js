@@ -86,6 +86,10 @@ function setup() {
 }
 
 function mousePressed() {
+  if (gameState === 0) {
+    startGame();
+    return;
+  }
   // PC用: クリックでボタン反応
   leftPressed = rightPressed = shootPressed = false;
   if (inBtn({x: mouseX, y: mouseY}, leftBtn)) leftPressed = true;
@@ -97,6 +101,10 @@ function mouseReleased() {
 }
 
 function touchStarted() {
+  if (gameState === 0) {
+    startGame();
+    return false;
+  }
   leftPressed = rightPressed = shootPressed = false;
   for (let t of touches) {
     if (inBtn(t, leftBtn)) leftPressed = true;
