@@ -333,7 +333,7 @@ function draw() {
     text("Press ENTER to Start", width/2, height/2 + 50);
     textSize(12);
     fill(180);
-    text("beta2.0", width/2, height/2 + 70);
+    text("beta3.0", width/2, height/2 + 70);
   } else if (gameState === 1) {
     // Playing State
     // Player movement
